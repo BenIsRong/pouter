@@ -17,4 +17,14 @@ async def on_ready():
 async def ping(ctx):
     await ctx.send('pong')
 
+@bot.command()
+async def create_role(ctx, *role_name:str):
+    guild = ctx.guild
+    role_name = " ".join(role_name)
+    try:
+        await guild.create_role(name=role_name)
+        await ctx.send(f"role `{role_name}` created!")
+    except:
+        await ctx.send(f"unable to create `{role_name}` :c")
+
 bot.run(os.getenv('token'))
