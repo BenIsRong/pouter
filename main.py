@@ -2,10 +2,10 @@ import os
 import discord
 from discord.ext import commands
 
-intents = discord.Intents.all()
-# intents.message_content = True
-# intents.members = True
-# intents.polls = True
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+intents.polls = True
 
 bot = commands.Bot(command_prefix='~', intents=intents)
 
@@ -71,7 +71,7 @@ async def delete_role(ctx, *role_name:str):
         if role_name in [role.name for role in ctx.guild.roles]:
             role = discord.utils.get(ctx.author.guild.roles, name=role_name)
             await role.delete()
-            await ctx.send(f"role `{role_name}` has been deleted!`")
+            await ctx.send(f"role `{role_name}` has been deleted!")
     except:
         await ctx.send(f"unable to delete the role `{role_name}` :c")
 
