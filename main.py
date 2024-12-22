@@ -33,7 +33,7 @@ async def create_role(ctx, *role_name:str):
 
 
 @bot.command()
-async def set_role(ctx, *role_name:str):
+async def role(ctx, *role_name:str):
     role_name = " ".join(role_name)
     try:
         if role_name in [role.name for role in ctx.guild.roles]:
