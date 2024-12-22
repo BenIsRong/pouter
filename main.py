@@ -18,6 +18,7 @@ async def ping(ctx):
     await ctx.send('pong')
 
 @bot.command()
+@commands.has_guild_permissions(administrator=True)
 async def create_role(ctx, *role_name:str):
     guild = ctx.guild
     role_name = " ".join(role_name)
