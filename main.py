@@ -62,4 +62,17 @@ async def remove_role(ctx, *role_name:str):
     except:
         await ctx.send(f"unable to remove role `{role_name}` for some reason :c")
 
+@bot.command()
+@commands.has_guild_permissions(administrator=True)
+async def delete_role(ctx, *role_name:str):
+    role_name = " ".join(role_name)
+    try:
+        if role_name in [role.name for role in ctx.guild.roles]:
+            role = discord.utils.get(ctx.author.guild.roles, name=role_name)
+            await role.delete()
+            await ctx.send(f"role `{role_name}` has been deleted!`")
+    except:
+        await ctx.send(f"unable to delete the role `{role_name}` :c")
+
+
 bot.run(os.getenv('token'))
