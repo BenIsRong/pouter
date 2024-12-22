@@ -30,4 +30,21 @@ async def create_role(ctx, *role_name:str):
     except:
         await ctx.send(f"unable to create `{role_name}` :c")
 
+
+@bot.command()
+async def set_role(ctx, *role_name:str):
+    role_name = " ".join(role_name)
+    try:
+        if role_name in [role.name for role in ctx.guild.roles]:
+            if not role_name in [role.name for role in ctx.author.roles]:
+                await ctx.author.add_roles(discord.utils.get(ctx.author.guild.roles, name=role_name), reason="set_role command initiated by user")
+                await ctx.send(f"role `{role_name}` is now assigned to you!")
+            else:
+                await ctx.send(f"role `{role_name}` has already been assigned to you!")
+        else:
+            await ctx.send(f"role `{role_name}` does not exist! (you can create it by calling ~create_role [role name])")
+    except Exception as e:
+        print(e)
+        await ctx.send(f"unable to set role `{role_name}` for some reason :c")
+
 bot.run(os.getenv('token'))
