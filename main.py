@@ -1,6 +1,7 @@
 import os
+import redis
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -8,9 +9,11 @@ intents.members = True
 intents.polls = True
 
 bot = commands.Bot(command_prefix='~', intents=intents)
+redis_client = redis.Redis(host=os.getenv("redis_host"), port=os.getenv("redis_port"), decode_responses=True, username=os.getenv("redis_username"), password=os.getenv("redis_password"))
 
 @bot.event
 async def on_ready():
+    check_reminder.start()
     print('ready')
 
 @bot.command()
@@ -32,6 +35,7 @@ async def create_role(ctx, *role_name:str):
         await ctx.send(f"unable to create `{role_name}` :c")
 
 
+#roles
 @bot.command()
 async def role(ctx, *role_name:str):
     role_name = " ".join(role_name)
@@ -74,6 +78,29 @@ async def delete_role(ctx, *role_name:str):
             await ctx.send(f"role `{role_name}` has been deleted!")
     except:
         await ctx.send(f"unable to delete the role `{role_name}` :c")
+
+
+#reminders
+@tasks.loop(seconds=10)
+async def check_reminder():
+    channel = await bot.fetch_channel(os.getenv('reminder_channel_id'))
+    # await channel.send("test")
+
+@bot.command()
+async def reminder(ctx, *reminder:str):
+    try:
+        if len(reminder) < 3:
+            await ctx.send('please use the proper format')
+        else:
+            reminder_date = reminder[0]
+            reminder_time = reminder[1]
+            reminder = " ".join(reminder[2:])
+            if redis_client.hset(f"reminder_{reminder_date}_{reminder_time}", mapping={'reminder_date': reminder_date, 'reminder_time': reminder_time, 'reminder': reminder}):
+                await ctx.send("reminder set")
+            else:
+                await ctx.send("failed to set reminder :c")
+    except:
+        await ctx.send("unable to set reminder :c")
 
 
 bot.run(os.getenv('token'))
