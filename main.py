@@ -2,7 +2,9 @@ import os
 import redis
 import discord
 from datetime import datetime
+from pymongo import MongoClient
 from discord.ext import commands, tasks
+from pymongo.server_api import ServerApi
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -10,12 +12,17 @@ intents.members = True
 intents.polls = True
 
 bot = commands.Bot(command_prefix='~', intents=intents)
-redis_client = redis.Redis(host=os.getenv("redis_host"), port=os.getenv("redis_port"), decode_responses=True, username=os.getenv("redis_username"), password=os.getenv("redis_password"))
+client = MongoClient(f'mongodb+srv://pouter:{os.getenv("mongo_password")}@{os.getenv("mongo_host")}/?retryWrites=true&w=majority&appName=pouter', server_api=ServerApi('1'))
 
 @bot.event
 async def on_ready():
-    check_reminder.start()
-    print('ready')
+    try:
+        client.admin.command('ping')
+        print("Pinged your deployment. You successfully connected to MongoDB!")
+        check_reminder.start()
+        print('ready')
+    except Exception as e:
+        print(e)
 
 @bot.command()
 async def ping(ctx):
@@ -82,21 +89,24 @@ async def delete_role(ctx, *role_name:str):
 
 
 #reminders
-@tasks.loop(seconds=10)
+@tasks.loop(seconds=30)
 async def check_reminder():
     channel = await bot.fetch_channel(os.getenv('reminder_channel_id'))
     now = datetime.now()
     date = now.strftime('%d-%m-%Y')
     time = now.strftime('%H%M')
-    key = set_reminder_key(date, time)
-    reminder = redis_client.hgetall(key)
-    print(f"{key}\n{reminder}")
-    if(reminder):
-        await channel.send(reminder['reminder'])
-        redis_client.delete(key)
+    db = client["pouter"]
+    collection = db["reminder"]
+    results = [reminder for reminder in collection.find({"reminder_date": date, "reminder_time": time})]
+    for result in results:
+        await channel.send(result["reminder"])
+
+    collection.delete_many({"reminder_date": date, "reminder_time": time})
 
 @bot.command()
 async def reminder(ctx, *reminder:str):
+    db = client["pouter"]
+    collection = db["reminder"]
     try:
         if len(reminder) < 3:
             await ctx.send('please use the proper format')
@@ -104,15 +114,22 @@ async def reminder(ctx, *reminder:str):
             reminder_date = reminder[0]
             reminder_time = reminder[1]
             reminder = " ".join(reminder[2:])
-            if redis_client.hset(set_reminder_key(reminder_date, reminder_time), mapping={'reminder_date': reminder_date, 'reminder_time': reminder_time, 'reminder': reminder}):
-                await ctx.send("reminder set")
+            result = collection.insert_one({
+                "reminder_date": reminder_date,
+                "reminder_time": str(reminder_time),
+                "reminder": reminder
+            })
+            if(result):
+                await ctx.send(f"the reminder has been set on {reminder_date}, {reminder_time}")
             else:
-                await ctx.send("failed to set reminder :c")
-    except:
+                await ctx.send("unable to set reminder :c")
+
+    except Exception as e:
+        print(e)
         await ctx.send("unable to set reminder :c")
 
 
-def set_reminder_key(date, time):
-    return f"reminder_{date}_{time}"
+def set_reminder_key(date, time, author=''):
+    return f"reminder:{date}_{time}" if author == '' else f"reminder:{date}_{time}_{author}"
 
 bot.run(os.getenv('token'))
