@@ -1,6 +1,7 @@
 import os
 import redis
 import discord
+from datetime import datetime
 from discord.ext import commands, tasks
 
 intents = discord.Intents.default()
@@ -84,7 +85,15 @@ async def delete_role(ctx, *role_name:str):
 @tasks.loop(seconds=10)
 async def check_reminder():
     channel = await bot.fetch_channel(os.getenv('reminder_channel_id'))
-    # await channel.send("test")
+    now = datetime.now()
+    date = now.strftime('%d-%m-%Y')
+    time = now.strftime('%H%M')
+    key = set_reminder_key(date, time)
+    reminder = redis_client.hgetall(key)
+    print(f"{key}\n{reminder}")
+    if(reminder):
+        await channel.send(reminder['reminder'])
+        redis_client.delete(key)
 
 @bot.command()
 async def reminder(ctx, *reminder:str):
@@ -95,12 +104,15 @@ async def reminder(ctx, *reminder:str):
             reminder_date = reminder[0]
             reminder_time = reminder[1]
             reminder = " ".join(reminder[2:])
-            if redis_client.hset(f"reminder_{reminder_date}_{reminder_time}", mapping={'reminder_date': reminder_date, 'reminder_time': reminder_time, 'reminder': reminder}):
+            if redis_client.hset(set_reminder_key(reminder_date, reminder_time), mapping={'reminder_date': reminder_date, 'reminder_time': reminder_time, 'reminder': reminder}):
                 await ctx.send("reminder set")
             else:
                 await ctx.send("failed to set reminder :c")
     except:
         await ctx.send("unable to set reminder :c")
 
+
+def set_reminder_key(date, time):
+    return f"reminder_{date}_{time}"
 
 bot.run(os.getenv('token'))
