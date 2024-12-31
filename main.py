@@ -89,7 +89,7 @@ async def delete_role(ctx, *role_name:str):
 
 
 #reminders
-@tasks.loop(seconds=30)
+@tasks.loop(seconds=20)
 async def check_reminder():
     channel = await bot.fetch_channel(os.getenv('reminder_channel_id'))
     now = datetime.now()
@@ -117,6 +117,10 @@ async def reminder(ctx, *reminder:str):
             result = collection.insert_one({
                 "reminder_date": reminder_date,
                 "reminder_time": str(reminder_time),
+                "author": {
+                    "id": ctx.author.id,
+                    "name": ctx.author.name,
+                },
                 "reminder": reminder
             })
             if(result):
@@ -127,9 +131,5 @@ async def reminder(ctx, *reminder:str):
     except Exception as e:
         print(e)
         await ctx.send("unable to set reminder :c")
-
-
-def set_reminder_key(date, time, author=''):
-    return f"reminder:{date}_{time}" if author == '' else f"reminder:{date}_{time}_{author}"
 
 bot.run(os.getenv('token'))
