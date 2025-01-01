@@ -142,4 +142,55 @@ async def remove_reminder(ctx, reminder_date:str, reminder_time:str):
     except:
         await ctx.send("unable to remove reminder :c")
 
+@bot.command()
+async def update_reminder(ctx, *reminder:str):
+    db = client["pouter"]
+    collection = db["reminder"]
+    try:
+        if len(reminder) < 3:
+            await ctx.send('please use the proper format!')
+        else:
+            reminder_date = reminder[0]
+            reminder_time = reminder[1]
+            reminder = " ".join(reminder[2:])
+            result = collection.update_one({"reminder_date": reminder_date, "reminder_time": reminder_time},{
+                "$set": {
+                    "reminder": reminder
+                }
+            })
+            if(result):
+                await ctx.send("updated the reminder!")
+            else:
+                await ctx.send("unable to update the reminder :c")
+    except:
+        await ctx.send("unable to update the reminder :c")
+
+@bot.command()
+async def update_reminder_with_time(ctx, *reminder:str):
+    db = client["pouter"]
+    collection = db["reminder"]
+    try:
+        if len(reminder) < 5:
+            await ctx.send('please use the proper format!')
+        else:
+            reminder_date = reminder[0]
+            reminder_time = reminder[1]
+            set_reminder_date = reminder[2]
+            set_reminder_time = reminder[3]
+            reminder = " ".join(reminder[4:])
+            result = collection.update_one({"reminder_date": reminder_date, "reminder_time": reminder_time},{
+                "$set": {
+                    "reminder_date": set_reminder_date,
+                    "reminder_time": str(set_reminder_time),
+                    "reminder": reminder
+                }
+            })
+            if(result):
+                await ctx.send("updated the reminder!")
+            else:
+                await ctx.send("unable to update the reminder :c")
+    except:
+        await ctx.send("unable to update the reminder :c")
+
+
 bot.run(os.getenv('token'))
