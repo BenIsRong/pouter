@@ -192,5 +192,15 @@ async def update_reminder_with_time(ctx, *reminder:str):
     except:
         await ctx.send("unable to update the reminder :c")
 
+@bot.command()
+async def show_reminders(ctx):
+    db = client["pouter"]
+    collection = db["reminder"]
+    response = ["the following are your reminders:"]
+    results = [document for document in collection.find({"author": {"id": ctx.author.id,"name": ctx.author.name}})]
+    if len(results) > 0:
+        for result in results:
+            response.append(f"\n- `{result['reminder']}` | {result['reminder_date']}, {result['reminder_time']}")
+    await ctx.send("".join(response))
 
 bot.run(os.getenv('token'))
