@@ -1,5 +1,4 @@
 import os
-import redis
 import discord
 from datetime import datetime
 from pymongo import MongoClient
