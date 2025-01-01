@@ -100,7 +100,6 @@ async def check_reminder():
     results = [reminder for reminder in collection.find({"reminder_date": date, "reminder_time": time})]
     for result in results:
         await channel.send(result["reminder"])
-
     collection.delete_many({"reminder_date": date, "reminder_time": time})
 
 @bot.command()
@@ -109,7 +108,7 @@ async def reminder(ctx, *reminder:str):
     collection = db["reminder"]
     try:
         if len(reminder) < 3:
-            await ctx.send('please use the proper format')
+            await ctx.send('please use the proper format!')
         else:
             reminder_date = reminder[0]
             reminder_time = reminder[1]
@@ -127,9 +126,20 @@ async def reminder(ctx, *reminder:str):
                 await ctx.send(f"the reminder has been set on {reminder_date}, {reminder_time}")
             else:
                 await ctx.send("unable to set reminder :c")
-
-    except Exception as e:
-        print(e)
+    except:
         await ctx.send("unable to set reminder :c")
+
+@bot.command()
+async def remove_reminder(ctx, reminder_date:str, reminder_time:str):
+    db = client["pouter"]
+    collection = db["reminder"]
+    try:
+        if len([reminder for reminder in collection.find({"reminder_date": reminder_date, "reminder_time": reminder_time})]):
+            collection.delete_one({"reminder_date": reminder_date, "reminder_time": reminder_time})
+            await ctx.send("reminder removed!")
+        else:
+            await ctx.send("unable to find a reminder with the given date and time :c")
+    except:
+        await ctx.send("unable to remove reminder :c")
 
 bot.run(os.getenv('token'))
