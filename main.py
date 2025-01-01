@@ -11,7 +11,7 @@ intents.members = True
 intents.polls = True
 
 bot = commands.Bot(command_prefix='~', intents=intents)
-client = MongoClient(f'mongodb+srv://pouter:{os.getenv("mongo_password")}@{os.getenv("mongo_host")}/?retryWrites=true&w=majority&appName=pouter', server_api=ServerApi('1'))
+client = MongoClient(f'mongodb+srv://{os.getenv("mongo_username")}:{os.getenv("mongo_password")}@{os.getenv("mongo_host")}/?retryWrites=true&w=majority&appName=pouter', server_api=ServerApi('1'))
 
 @bot.event
 async def on_ready():
